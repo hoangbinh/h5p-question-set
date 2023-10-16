@@ -63,6 +63,24 @@
     ]
   },
   {
+    "name": "dipsplayMode",
+    "type": "select",
+    "label": "Display mode",
+    "importance": "low",
+    "description": "Question set display mode.",
+    "options": [
+      {
+        "value": "flow",
+        "label": "Vertical Flow"
+      },
+      {
+        "value": "slide",
+        "label": "Horizontal Slide"
+      }
+    ],
+    "default": "slide"
+  },
+  {
     "name": "backgroundImage",
     "type": "image",
     "label": "Background image",
@@ -123,6 +141,8 @@
       "importance": "high",
       "description": "Library for this question.",
       "options": [
+        "H5P.AdvancedText 1.1",
+        "H5P.Audio 1.5",
         "H5P.MultiChoice 1.16",
         "H5P.DragQuestion 1.14",
         "H5P.Blanks 1.14",
