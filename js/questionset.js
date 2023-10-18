@@ -303,50 +303,52 @@ H5P.QuestionSet = function (options, contentId, contentData) {
     });
   }
 
-  self.$footer = $('<div>', {
-    class: 'qs-footer',
-    appendTo: self.$questionsContainer
-  });
-
-  self.$progressBar = $('<div>', {
-    class: 'qs-progress',
-    role: 'navigation',
-    'aria-label': params.texts.navigationLabel,
-    appendTo: self.$footer
-  });
-
-  if (params.progressType == "dots") {
-    self.$dotsContainer = $('<ul>', {
-      class: 'dots-container',
-      appendTo: self.$progressBar
+  if (options.displayMode == 'slide') {
+    self.$footer = $('<div>', {
+      class: 'qs-footer',
+      appendTo: self.$questionsContainer
     });
 
-    for (let i=0; i<params.questions.length; i++) {
-      $('<li>', {
-        class: 'progress-item',
-        html: '<a href="#" class= "progress-dot unanswered ' + 
-              (params.disableBackwardsNavigation ? 'disabled' : '') +
-              '" ' +
-              'aria-label=' +
-                '"' +
-                params.texts.jumpToQuestion.replace("%d", i + 1).replace("%total", params.questions.length) +
-                ', ' +
-                params.texts.unansweredText +
+    self.$progressBar = $('<div>', {
+      class: 'qs-progress',
+      role: 'navigation',
+      'aria-label': params.texts.navigationLabel,
+      appendTo: self.$footer
+    });
+
+    if (params.progressType == "dots") {
+      self.$dotsContainer = $('<ul>', {
+        class: 'dots-container',
+        appendTo: self.$progressBar
+      });
+
+      for (let i=0; i<params.questions.length; i++) {
+        $('<li>', {
+          class: 'progress-item',
+          html: '<a href="#" class= "progress-dot unanswered ' + 
+                (params.disableBackwardsNavigation ? 'disabled' : '') +
                 '" ' +
-              'tabindex="-1" ' +
-              (params.disableBackwardsNavigation ? 'aria-disabled="true"' : '') +
-              '></a>',
-        appendTo: self.$dotsContainer
+                'aria-label=' +
+                  '"' +
+                  params.texts.jumpToQuestion.replace("%d", i + 1).replace("%total", params.questions.length) +
+                  ', ' +
+                  params.texts.unansweredText +
+                  '" ' +
+                'tabindex="-1" ' +
+                (params.disableBackwardsNavigation ? 'aria-disabled="true"' : '') +
+                '></a>',
+          appendTo: self.$dotsContainer
+        })
+      }
+    }
+
+    else if (params.progressType == "textual") {
+      $('<span>', {
+        class: 'progress-text',
+        appendTo: self.$progressBar
       })
     }
   }
-
-  else if (params.progressType == "textual") {
-    $('<span>', {
-      class: 'progress-text',
-      appendTo: self.$progressBar
-    })
-}
 
   // Randomize questions only on instantiation
   if (params.randomQuestions && contentData.previousState === undefined) {
@@ -409,7 +411,8 @@ H5P.QuestionSet = function (options, contentId, contentData) {
     currentQuestion = questionNumber;
 
     // Hide all questions
-    $('.question-container', $myDom).hide().eq(questionNumber).show();
+    if (options.displayMode == 'slide')
+      $('.question-container', $myDom).hide().eq(questionNumber).show();
 
     if (questionInstances[questionNumber]) {
       // Trigger resize on question in case the size of the QS has changed.
@@ -421,18 +424,20 @@ H5P.QuestionSet = function (options, contentId, contentData) {
     }
 
     // Update progress indicator
-    // Test if current has been answered.
-    if (params.progressType === 'textual') {
-      $('.progress-text', $myDom).text(params.texts.textualProgress.replace("@current", questionNumber+1).replace("@total", params.questions.length));
-    }
-    else {
-      // Set currentNess
-      var previousQuestion = $('.progress-dot.current', $myDom).parent().index();
-      if (previousQuestion >= 0) {
-        toggleCurrentDot(previousQuestion, false);
-        toggleAnsweredDot(previousQuestion, questionInstances[previousQuestion].getAnswerGiven());
+    if (options.displayMode == 'slide') {
+      // Test if current has been answered.
+      if (params.progressType === 'textual') {
+        $('.progress-text', $myDom).text(params.texts.textualProgress.replace("@current", questionNumber+1).replace("@total", params.questions.length));
       }
-      toggleCurrentDot(questionNumber, true);
+      else {
+        // Set currentNess
+        var previousQuestion = $('.progress-dot.current', $myDom).parent().index();
+        if (previousQuestion >= 0) {
+          toggleCurrentDot(previousQuestion, false);
+          toggleAnsweredDot(previousQuestion, questionInstances[previousQuestion].getAnswerGiven());
+        }
+        toggleCurrentDot(questionNumber, true);
+      }
     }
 
     if (!preventAnnouncement) {
@@ -958,23 +963,25 @@ H5P.QuestionSet = function (options, contentId, contentData) {
       question.addButton('finish', finishButtonText,
         moveQuestion.bind(this, 1), false);
 
-      // Add next button
-      question.addButton('next', '', moveQuestion.bind(this, 1),
-        !params.disableBackwardsNavigation || !!question.getAnswerGiven(), {
-          href: '#', // Use href since this is a navigation button
-          'aria-label': params.texts.nextButton
-        });
+      if (options.displayMode == 'slide') {
+        // Add next button
+        question.addButton('next', '', moveQuestion.bind(this, 1),
+          !params.disableBackwardsNavigation || !!question.getAnswerGiven(), {
+            href: '#', // Use href since this is a navigation button
+            'aria-label': params.texts.nextButton
+          });
 
-      // Add previous button
-      question.addButton('prev', '', moveQuestion.bind(this, -1),
-        !(questionInstances[0] === question || params.disableBackwardsNavigation), {
-          href: '#', // Use href since this is a navigation buttonq
-          'aria-label': params.texts.prevButton
-        });
+        // Add previous button
+        question.addButton('prev', '', moveQuestion.bind(this, -1),
+          !(questionInstances[0] === question || params.disableBackwardsNavigation), {
+            href: '#', // Use href since this is a navigation buttonq
+            'aria-label': params.texts.prevButton
+          });
 
-      // Hide next button if it is the last question
-      if (questionInstances[questionInstances.length -1] === question) {
-        question.hideButton('next');
+        // Hide next button if it is the last question
+        if (questionInstances[questionInstances.length -1] === question) {
+          question.hideButton('next');
+        }
       }
 
       question.on('xAPI', function (event) {
